@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KenKen 5x5 — Juego Lógico</title>
+<style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+        margin: 0;
+        height: 100vh;
+        background: radial-gradient(circle at center, #220044 0%, #12002a 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        font-family: "Poppins", sans-serif;
+        color: #fff;
+    }
+
+    h1 {
+        font-size: 2em;
+        letter-spacing: 3px;
+        text-shadow: 0 0 12px #00ffff;
+        margin-bottom: 15px;
+        user-select: none;
+    }
+
+    #kenken {
+        display: grid;
+        grid-template-columns: repeat(5, 60px);
+        grid-template-rows: repeat(5, 60px);
+        gap: 2px;
+        background: #00ffff33;
+        padding: 8px;
+        border-radius: 12px;
+        box-shadow: 0 0 25px #00ffff55;
+        transition: opacity 0.3s ease;
+    }
+
+    .cell {
+        background: rgba(255,255,255,0.1);
+        border: 1px solid #00ffff33;
+        text-align: center;
+        font-size: 1.4em;
+        color: #fff;
+        cursor: pointer;
+        transition: 0.2s;
+        position: relative;
+    }
+
+    .cell input {
+        width: 100%;
+        height: 100%;
+        background: transparent;
+        border: none;
+        color: #fff;
+        font-size: 1.4em;
+        text-align: center;
+        outline: none;
+    }
+
+    .cell:hover { background: rgba(255,255,255,0.15); }
+
+    .cage-label {
+        position: absolute;
+        top: 4px;
+        left: 5px;
+        font-size: 0.65em;
+        color: #00ffffcc;
+        user-select: none;
+    }
+
+    .buttons {
+        margin-top: 20px;
+        display: flex;
+        gap: 10px;
+    }
+
+    button {
+        background: #00ffaa;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-size: 1em;
+        font-weight: 600;
+        color: #000;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    button:hover { background: #00cc88; transform: scale(1.05); }
+
+    .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        visibility: hidden;
+        opacity: 0;
+        transition: 0.4s;
+    }
+
+    .modal.show {
+        visibility: visible;
+        opacity: 1;
+    }
+
+    .modal-content {
+        background: #120033;
+        padding: 30px 40px;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 0 30px #00ffff66;
+        animation: pop 0.4s ease;
+    }
+
+    @keyframes pop { from {transform: scale(0.8);} to {transform: scale(1);} }
+
+    .symbol {
+        position: absolute;
+        top: -10%;
+        font-size: 1.2em;
+        color: #00ffff88;
+        animation: fall linear infinite;
+    }
+
+    @keyframes fall {
+        0% { transform: translateY(0); opacity: 1; }
+        100% { transform: translateY(110vh); opacity: 0; }
+    }
+</style>
+</head>
+<body>
+<h1>KenKen 5×5</h1>
+<div id="kenken"></div>
+<div class="buttons">
+    <button id="verifyBtn">Verificar</button>
+    <button id="retryBtn">Reintentar</button>
+    <button id="newBtn">Nuevo</button>
+</div>
+
+<div class="modal" id="modal">
+    <div class="modal-content" id="modalContent"></div>
+</div>
+
+<script>
+const grids = [
+  {
+    solution: [
+      [4,5,3,2,1],
+      [3,2,1,5,4],
+      [5,1,4,3,2],
+      [2,4,5,1,3],
+      [1,3,2,4,5]
+    ],
+    cages: [
+      {cells:[[0,0],[0,1]], op:"+", target:9},
+      {cells:[[0,2],[1,2]], op:"-", target:2},
+      {cells:[[0,3],[0,4],[1,4]], op:"+", target:8},
+      {cells:[[1,0],[2,0]], op:"/", target:1.5},
+      {cells:[[1,1],[2,1]], op:"-", target:1},
+      {cells:[[1,3],[2,3]], op:"-", target:2},
+      {cells:[[2,2],[3,2],[3,3]], op:"+", target:12},
+      {cells:[[2,4],[3,4],[4,4]], op:"+", target:8},
+      {cells:[[3,0],[3,1],[4,1]], op:"+", target:9},
+      {cells:[[4,0]], op:"=", target:1},
+      {cells:[[4,2],[4,3]], op:"-", target:2}
+    ]
+  },
+  {
+    solution: [
+      [1,2,3,4,5],
+      [5,4,2,1,3],
+      [3,5,4,2,1],
+      [2,1,5,3,4],
+      [4,3,1,5,2]
+    ],
+    cages: [
+      {cells:[[0,0],[0,1]], op:"+", target:3},
+      {cells:[[0,2],[0,3],[0,4]], op:"+", target:12},
+      {cells:[[1,0],[2,0]], op:"-", target:2},
+      {cells:[[1,1],[2,1]], op:"/", target:2},
+      {cells:[[1,2],[1,3]], op:"+", target:6},
+      {cells:[[1,4],[2,4]], op:"-", target:2},
+      {cells:[[2,2],[2,3]], op:"+", target:6},
+      {cells:[[3,0],[3,1],[4,0]], op:"+", target:7},
+      {cells:[[3,2],[3,3],[3,4]], op:"+", target:12},
+      {cells:[[4,1],[4,2]], op:"-", target:2},
+      {cells:[[4,3],[4,4]], op:"/", target:2}
+    ]
+  }
+];
+
+let current = 0;
+const board = document.getElementById("kenken");
+const modal = document.getElementById("modal");
+const modalContent = document.getElementById("modalContent");
+
+function drawGrid() {
+  board.style.opacity = 0;
+  setTimeout(()=>{
+    board.innerHTML = "";
+    const g = grids[current];
+    for (let r=0;r<5;r++) {
+      for (let c=0;c<5;c++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        const input = document.createElement("input");
+        input.type = "text";
+        input.maxLength = 1;
+        cell.appendChild(input);
+        board.appendChild(cell);
+      }
+    }
+    g.cages.forEach(cage => {
+      const [r,c] = cage.cells[0];
+      const idx = r*5 + c;
+      const label = document.createElement("div");
+      label.className = "cage-label";
+      label.textContent = cage.target + cage.op;
+      board.children[idx].appendChild(label);
+    });
+    board.style.opacity = 1;
+  },200);
+}
+
+function getValues() {
+  const vals = [];
+  const inputs = board.querySelectorAll("input");
+  for (let i=0;i<5;i++) {
+    vals.push([]);
+    for (let j=0;j<5;j++) {
+      const v = inputs[i*5+j].value;
+      vals[i].push(parseInt(v)||0);
+    }
+  }
+  return vals;
+}
+
+function verify() {
+  const vals = getValues();
+  const sol = grids[current].solution;
+  for (let i=0;i<5;i++) {
+    for (let j=0;j<5;j++) {
+      if (vals[i][j]!==sol[i][j]) {
+        showModal("❌ Incorrecto. ¡Inténtalo de nuevo!");
+        return;
+      }
+    }
+  }
+  showModal("🎉 ¡Correcto! Generando nuevo KenKen...");
+  setTimeout(()=>{ newKenKen(); },1800);
+}
+
+function retry() { drawGrid(); }
+
+function newKenKen() {
+  let prev = current;
+  do { current = Math.floor(Math.random()*grids.length); } while(current===prev);
+  drawGrid();
+}
+
+function showModal(msg) {
+  modalContent.textContent = msg;
+  modal.classList.add("show");
+  setTimeout(()=>modal.classList.remove("show"),1500);
+}
+
+document.getElementById("verifyBtn").onclick = verify;
+document.getElementById("retryBtn").onclick = retry;
+document.getElementById("newBtn").onclick = newKenKen;
+
+drawGrid();
+
+// lluvia de símbolos
+const symbols = ["√","π","φ","∆","∑","∞","λ","Ω","ψ","θ","β","α"];
+setInterval(()=>{
+  const s = document.createElement("span");
+  s.className = "symbol";
+  s.textContent = symbols[Math.floor(Math.random()*symbols.length)];
+  s.style.left = Math.random()*100+"vw";
+  s.style.fontSize = (Math.random()*1.2+0.6)+"em";
+  s.style.animationDuration = (Math.random()*5+4)+"s";
+  document.body.appendChild(s);
+  setTimeout(()=>s.remove(),10000);
+},350);
+</script>
+</body>
+</html>

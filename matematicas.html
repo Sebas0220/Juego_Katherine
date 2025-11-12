@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Juego Matemático — Figuras</title>
+<style>
+  :root{
+    --neon:#a566ff; /* morado claro */
+    --bg1:#1a0033;
+    --bg2:#090015;
+  }
+  body{
+    margin:0;
+    font-family:'Poppins',sans-serif;
+    background: radial-gradient(circle at center,var(--bg1),var(--bg2));
+    color:white;
+    text-align:center;
+    overflow:hidden;
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+  }
+
+  h1{
+    text-shadow:0 0 10px var(--neon);
+    font-size:2rem;
+    margin-bottom:25px;
+    z-index:10;
+  }
+
+  /* Temporizador barra */
+  .barra-tiempo{
+    position:relative;
+    width:80%;
+    height:20px;
+    background:#300050;
+    border-radius:15px;
+    overflow:hidden;
+    margin-bottom:30px;
+    box-shadow:0 0 12px var(--neon);
+  }
+  .progreso{
+    position:absolute;
+    left:0;
+    top:0;
+    height:100%;
+    width:100%;
+    background:linear-gradient(90deg,#a566ff,#d5a6ff);
+    border-radius:15px;
+    transition:width 0.2s linear;
+  }
+
+  /* Figuras */
+  .figuras{
+    display:flex;
+    gap:60px;
+    margin-bottom:30px;
+    z-index:10;
+  }
+  .figura{
+    position:relative;
+    width:100px;
+    height:100px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+  }
+  .circulo{
+    border-radius:50%;
+    background: radial-gradient(circle, #0ff, #0044aa);
+    box-shadow:0 0 15px #0ff;
+    width:100px;
+    height:100px;
+  }
+  .cuadrado{
+    background: linear-gradient(145deg,#00ffaa,#0055ff);
+    box-shadow:0 0 15px #00ffaa;
+    width:100px;
+    height:100px;
+  }
+  .estrella svg{
+    width:100px;
+    height:100px;
+    filter:drop-shadow(0 0 8px #ff0);
+  }
+  .valor{
+    margin-top:8px;
+    font-size:1.4rem;
+    font-weight:bold;
+    text-shadow:0 0 8px rgba(255,255,255,0.6);
+  }
+
+  /* Operación con figuras */
+  .operacion{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:15px;
+    font-size:2rem;
+    z-index:10;
+  }
+
+  input{
+    margin-top:15px;
+    padding:10px;
+    border:none;
+    border-radius:10px;
+    text-align:center;
+    font-size:1.2rem;
+    outline:none;
+    z-index:10;
+  }
+  button{
+    margin-top:15px;
+    padding:10px 25px;
+    font-size:1.1rem;
+    border:none;
+    border-radius:10px;
+    background:var(--neon);
+    color:#000;
+    cursor:pointer;
+    font-weight:bold;
+    transition:transform .2s;
+    z-index:10;
+  }
+  button:hover{
+    transform:scale(1.1);
+  }
+  .mensaje{
+    margin-top:15px;
+    font-size:1.3rem;
+    text-shadow:0 0 10px var(--neon);
+    z-index:10;
+  }
+
+  /* Modal */
+  .modal{
+    position:fixed;
+    top:0;left:0;
+    width:100%;height:100%;
+    background:rgba(0,0,0,0.85);
+    display:none;
+    justify-content:center;
+    align-items:center;
+    z-index:50;
+  }
+  .modal-content{
+    background:#2a004d;
+    padding:30px;
+    border-radius:20px;
+    box-shadow:0 0 20px var(--neon);
+    text-align:center;
+    max-width:400px;
+  }
+  .modal h2{
+    color:var(--neon);
+    margin-bottom:15px;
+  }
+
+  /* Fondo lluvia */
+  canvas{
+    position:fixed;
+    top:0;left:0;
+    width:100%;height:100%;
+    z-index:0;
+  }
+</style>
+</head>
+<body>
+  <canvas id="lluvia"></canvas>
+  <h1>🧮 Desafío Matemático de Figuras</h1>
+
+  <div class="barra-tiempo">
+    <div class="progreso" id="progreso"></div>
+  </div>
+
+  <div class="figuras">
+    <div class="figura">
+      <div class="estrella">
+        <svg viewBox="0 0 100 100">
+          <polygon points="50,5 61,35 95,35 67,55 78,85 50,67 22,85 33,55 5,35 39,35" fill="gold"/>
+        </svg>
+      </div>
+      <div class="valor" id="val-estrella">?</div>
+    </div>
+    <div class="figura">
+      <div class="circulo"></div>
+      <div class="valor" id="val-circulo">?</div>
+    </div>
+    <div class="figura">
+      <div class="cuadrado"></div>
+      <div class="valor" id="val-cuadrado">?</div>
+    </div>
+  </div>
+
+  <div class="operacion" id="operacion"></div>
+  <input type="number" id="respuesta" placeholder="Tu respuesta">
+  <button onclick="verificar()">Verificar</button>
+  <div class="mensaje" id="mensaje"></div>
+
+  <!-- Modal final -->
+  <div class="modal" id="resultadoModal">
+    <div class="modal-content">
+      <h2>⏱ Resultado final</h2>
+      <p id="resumen"></p>
+      <button onclick="location.reload()">Reiniciar</button>
+    </div>
+  </div>
+
+<script>
+  // ==================== Variables =====================
+  let valores = {};
+  let resultado = 0;
+  let tiempo = 60;
+  let timerInterval = null;
+  let started = false;
+  let correctas = 0;
+  let incorrectas = 0;
+  let totalOperaciones = 0;
+  let tiempoTotal = 0;
+
+  const progresoBarra = document.getElementById("progreso");
+
+  // ==================== Lógica =====================
+  function numeroAleatorio(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function generarValores() {
+    valores = {
+      estrella: numeroAleatorio(1, 9),
+      circulo: numeroAleatorio(1, 9),
+      cuadrado: numeroAleatorio(1, 9)
+    };
+    document.getElementById("val-estrella").innerText = valores.estrella;
+    document.getElementById("val-circulo").innerText = valores.circulo;
+    document.getElementById("val-cuadrado").innerText = valores.cuadrado;
+  }
+
+  function generarOperacion() {
+    const figuras = ["estrella","circulo","cuadrado"];
+    const ops = ["+","-","*","/"];
+    const f1 = figuras.splice(numeroAleatorio(0,figuras.length-1),1)[0];
+    const f2 = figuras.splice(numeroAleatorio(0,figuras.length-1),1)[0];
+    const f3 = figuras[0];
+    const op1 = ops[numeroAleatorio(0,ops.length-1)];
+    const op2 = ops[numeroAleatorio(0,ops.length-1)];
+
+    const expresion = `${valores[f1]}${op1}${valores[f2]}${op2}${valores[f3]}`;
+    resultado = eval(expresion);
+    resultado = Math.round((resultado + Number.EPSILON)*100)/100;
+
+    // Mostrar con figuras
+    const simbolo = (tipo) => {
+      if(tipo === "estrella") return "⭐";
+      if(tipo === "circulo") return "⚪";
+      if(tipo === "cuadrado") return "🟦";
+    };
+    document.getElementById("operacion").innerHTML =
+      `${simbolo(f1)} ${op1.replace("*","×").replace("/","÷")} ${simbolo(f2)} ${op2.replace("*","×").replace("/","÷")} ${simbolo(f3)}`;
+  }
+
+  function nuevaRonda() {
+    generarValores();
+    generarOperacion();
+    document.getElementById("mensaje").innerText = "";
+    document.getElementById("respuesta").value = "";
+    totalOperaciones++;
+  }
+
+  function iniciarTemporizador() {
+    if (started) return;
+    started = true;
+    timerInterval = setInterval(()=>{
+      tiempo--;
+      if(tiempo <= 0){
+        tiempo = 0;
+        clearInterval(timerInterval);
+        finalizarJuego();
+      }
+      progresoBarra.style.width = (tiempo/60)*100 + "%";
+    },1000);
+  }
+
+  function verificar() {
+    const input = document.getElementById("respuesta");
+    const r = parseFloat(input.value);
+    if(isNaN(r)) return;
+    iniciarTemporizador();
+    let inicio = performance.now();
+
+    if(Math.abs(r - resultado) < 0.01){
+      correctas++;
+      tiempo += 1;
+      if(tiempo > 60) tiempo = 60;
+      document.getElementById("mensaje").innerText = "✅ ¡Correcto!";
+    }else{
+      incorrectas++;
+      tiempo -= 2;
+      if(tiempo < 0) tiempo = 0;
+      document.getElementById("mensaje").innerText = `❌ Incorrecto (era ${resultado})`;
+    }
+    progresoBarra.style.width = (tiempo/60)*100 + "%";
+
+    let fin = performance.now();
+    tiempoTotal += (fin - inicio)/1000;
+    setTimeout(nuevaRonda, 1000);
+  }
+
+  function finalizarJuego(){
+    document.getElementById("resultadoModal").style.display="flex";
+    const promedio = totalOperaciones>0?(tiempoTotal/totalOperaciones).toFixed(2):0;
+    document.getElementById("resumen").innerHTML = `
+      ✅ Correctas: ${correctas}<br>
+      ❌ Incorrectas: ${incorrectas}<br>
+      ⏳ Promedio/operación: ${promedio}s
+    `;
+  }
+
+  // ==================== Lluvia de símbolos =====================
+  const canvas = document.getElementById("lluvia");
+  const ctx = canvas.getContext("2d");
+  let width = canvas.width = window.innerWidth;
+  let height = canvas.height = window.innerHeight;
+  const simbolos = ["+","−","×","÷"];
+  const columnas = Math.floor(width/20);
+  const drops = Array(columnas).fill(0);
+
+  function lluvia(){
+    ctx.fillStyle = "rgba(0,0,30,0.2)";
+    ctx.fillRect(0,0,width,height);
+    ctx.fillStyle = "#a566ff";
+    ctx.font = "20px monospace";
+    for(let i=0;i<drops.length;i++){
+      const text = simbolos[Math.floor(Math.random()*simbolos.length)];
+      ctx.fillText(text,i*20,drops[i]*20);
+      if(drops[i]*20 > height && Math.random()>0.975) drops[i]=0;
+      drops[i]++;
+    }
+  }
+  setInterval(lluvia,60);
+  window.addEventListener("resize",()=>{
+    width=canvas.width=window.innerWidth;
+    height=canvas.height=window.innerHeight;
+  });
+
+  // ==================== Inicio =====================
+  nuevaRonda();
+</script>
+</body>
+</html>

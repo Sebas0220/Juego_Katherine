@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seleccionar Juego</title>
+<style>
+    * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+        margin: 0;
+        height: 100vh;
+        background: linear-gradient(-45deg, #3a0073, #5300a3, #28004a, #150022);
+        background-size: 400% 400%;
+        animation: bgMove 12s ease-in-out infinite;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        overflow: hidden;
+        font-family: "Poppins", sans-serif;
+        color: #fff;
+        text-align: center;
+    }
+
+    @keyframes bgMove {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    h1 {
+        font-size: clamp(2em, 6vw, 2.8em);
+        margin-bottom: 60px;
+        text-shadow: 0 0 15px #00ffff;
+        letter-spacing: 2px;
+        animation: fadeInDown 1.2s ease both;
+        user-select: none;
+    }
+
+    @keyframes fadeInDown {
+        from { opacity: 0; transform: translateY(-30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .game-container {
+        display: flex;
+        gap: 50px;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        z-index: 2;
+        animation: fadeInUp 1.5s ease both;
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .game-btn {
+        background: linear-gradient(145deg, #00fff0, #00b2ff);
+        border: none;
+        border-radius: 20px;
+        padding: 35px 55px;
+        font-size: clamp(1.1em, 3vw, 1.5em);
+        color: #000;
+        cursor: pointer;
+        font-weight: bold;
+        user-select: none;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.4s ease, box-shadow 0.4s ease;
+        box-shadow: 0 0 25px #00ffff70;
+    }
+
+    /* ✨ Transición bacana: brillo en hover + movimiento fluido */
+    .game-btn::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(120deg, transparent, rgba(255,255,255,0.6), transparent);
+        transition: all 0.5s ease;
+    }
+
+    .game-btn:hover::before {
+        left: 100%;
+    }
+
+    .game-btn:hover {
+        transform: scale(1.1) rotate(1deg);
+        box-shadow: 0 0 40px #00ffff, 0 0 80px #0088ff;
+    }
+
+    .symbol {
+        position: absolute;
+        top: -10%;
+        font-size: 1.2em;
+        color: #b5ffff;
+        opacity: 0.7;
+        animation: fall linear infinite;
+        z-index: 0;
+        will-change: transform, opacity;
+    }
+
+    @keyframes fall {
+        0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+        100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+    }
+
+    /* 📱 Diseño adaptable */
+    @media (max-width: 768px) {
+        .game-container {
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        h1 {
+            margin-bottom: 40px;
+        }
+
+        .game-btn {
+            width: 80%;
+            padding: 25px 0;
+        }
+    }
+
+    @media (max-width: 480px) {
+        body {
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 2em;
+        }
+
+        .game-btn {
+            font-size: 1em;
+            border-radius: 15px;
+            box-shadow: 0 0 20px #00ffff60;
+        }
+    }
+</style>
+</head>
+<body>
+    <h1>Selecciona tu Juego</h1>
+    <div class="game-container">
+        <button class="game-btn" id="picasBtn">🎯 Picas y Fijas (VS IA)</button>
+        <button class="game-btn" id="opBtn">➕ Operaciones Matemáticas</button>
+        <button class="game-btn" id="sudokuBtn">🧩 Sudoku KenKen</button>
+    </div>
+
+<script>
+    // Fondo animado de símbolos matemáticos
+    const symbols = ["√", "π", "φ", "∑", "∫", "∞", "∆", "µ", "θ", "λ", "Ω", "ψ", "≠", "≈", "≤", "≥", "⊕", "⊗"];
+    const container = document.body;
+
+    function createSymbol() {
+        const span = document.createElement("span");
+        span.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+        span.classList.add("symbol");
+        span.style.left = Math.random() * 100 + "vw";
+        span.style.fontSize = (Math.random() * 1.5 + 0.5) + "em";
+        span.style.animationDuration = (Math.random() * 5 + 6) + "s";
+        span.style.opacity = Math.random() * 0.6 + 0.3;
+        container.appendChild(span);
+        setTimeout(() => span.remove(), 10000);
+    }
+
+    setInterval(createSymbol, 300);
+
+    // Interacción de botones con redirección
+    document.getElementById("picasBtn").addEventListener("click", () => {
+        btnAnimacion("🎯 Iniciando Picas y Fijas VS IA...");
+        setTimeout(() => window.location.href = "picasyfijas.html", 800);
+    });
+
+    document.getElementById("opBtn").addEventListener("click", () => {
+        btnAnimacion("➕ Iniciando Operaciones Matemáticas...");
+        setTimeout(() => window.location.href = "matematicas.html", 800);
+    });
+
+    document.getElementById("sudokuBtn").addEventListener("click", () => {
+        btnAnimacion("🧩 Iniciando Sudoku KenKen...");
+        setTimeout(() => window.location.href = "kenken.html", 800);
+    });
+
+    function btnAnimacion(mensaje) {
+        const h1 = document.querySelector("h1");
+        h1.textContent = mensaje;
+        h1.style.textShadow = "0 0 25px #00ffff, 0 0 60px #00aaff";
+        h1.style.transition = "all 0.6s ease";
+    }
+</script>
+</body>
+</html>
